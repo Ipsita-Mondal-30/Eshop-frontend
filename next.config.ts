@@ -1,9 +1,17 @@
-import type { NextConfig } from "next";
+// next.config.ts
+
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
-    domains: ['m.media-amazon.com','via.placeholder.com','randomuser.me'], // Add the domain here
+    domains: [
+      'm.media-amazon.com',
+      'via.placeholder.com',
+      'randomuser.me',
+      'example.com', // Add the external domain here if you're using images from example.com
+      'media.istockphoto.com',
+      'images.remotePatterns.com',
+    ],
   },
 };
 

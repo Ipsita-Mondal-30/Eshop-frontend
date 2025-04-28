@@ -5,14 +5,32 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getCart } from '@/services/cartService';
 import { getSessionId } from '@/utils/sessionId';
+import { motion } from 'framer-motion';
+import { ShoppingCart, Search, User, Menu, X } from 'lucide-react';
+import { useAuth } from '../app/context/authContext'; // path fix
+import { toast } from 'react-hot-toast';
 
 const Navbar = () => {
   const [cartItemsCount, setCartItemsCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const { isAuthenticated, logout, username } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+    if (isSearchOpen) setIsSearchOpen(false);
+  };
+
+  const toggleSearch = () => {
+    setIsSearchOpen(!isSearchOpen);
+    if (isMenuOpen) setIsMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully!');
   };
 
   useEffect(() => {
@@ -29,96 +47,188 @@ const Navbar = () => {
     };
 
     fetchCartItemsCount();
+
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [pathname]);
 
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Products', path: '/products' },
+    { name: 'Deals', path: '/deals' },
     { name: 'About', path: '/about' },
-    { name: 'Contact', path: '/contact' },
   ];
 
   return (
-    <nav className="bg-white border-b shadow-sm">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex justify-between items-center">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-            <span className="text-xl font-bold text-gray-800">E-Shop</span>
-          </Link>
+    <>
+      <header className={`fixed top-0 left-0 right-0 z-50 bg-white transition duration-300 ${scrolled ? 'shadow-md' : ''}`}>
+        {/* Announcement Bar */}
+        <div className="bg-gradient-to-r from-teal-500 to-blue-500 text-white text-center text-sm py-2">
+          Free shipping on orders over $50! Use code FREESHIP at checkout.
+        </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.name}
-                href={link.path}
-                className={`text-gray-600 hover:text-teal-500 transition-colors ${
-                  pathname === link.path ? 'font-semibold text-teal-500' : ''
-                }`}
+        {/* Main Navbar */}
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link href="/" className="flex items-center space-x-2">
+              
+  
+              <div className="flex items-center gap-2">
+  <img 
+    src="/logo.png" 
+    alt="Eshop Logo" 
+    className="h-16 w-auto"
+  />
+</div>
+
+            </Link>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.name}
+                  href={link.path}
+                  className={`text-gray-600 hover:text-gray-500 transition-colors relative ${
+                    pathname === link.path ? 'font-medium text-gray-500' : ''
+                  }`}
+                >
+                  {link.name}
+                  {pathname === link.path && (
+                    <span className="absolute left-0 right-0 bottom-0 h-0.5 bg-gray-500 rounded-full" />
+                  )}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Actions */}
+            <div className="flex items-center space-x-4">
+              {/* Search */}
+              <button
+                onClick={toggleSearch}
+                className="text-gray-600 hover:text-teal-500 transition-colors"
+                aria-label="Search"
               >
-                {link.name}
-              </Link>
-            ))}
-          </div>
+                <Search size={20} />
+              </button>
 
-          {/* Cart and Mobile Menu Toggle */}
-          <div className="flex items-center space-x-4">
-            <Link 
-              href="/cart" 
-              className="flex items-center text-gray-600 hover:text-teal-500 transition-colors"
-            >
-              <div className="relative">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+              {/* Account */}
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-700 hidden sm:inline">Hello, {username} 👋</span>
+                  <button onClick={handleLogout} className="text-red-500 hover:text-red-600 text-sm">
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="text-gray-600 hover:text-teal-500 text-sm font-medium"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="text-gray-600 hover:text-teal-500 text-sm font-medium"
+                  >
+                    Signup
+                  </Link>
+                </>
+              )}
+
+              {/* Cart */}
+              <Link 
+                href={isAuthenticated ? "/cart" : "/login"} 
+                className="text-gray-600 hover:text-teal-500 transition-colors relative"
+                aria-label="Cart"
+              >
+                <ShoppingCart size={20} />
                 {cartItemsCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-teal-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {cartItemsCount}
                   </span>
                 )}
-              </div>
-              <span className="ml-2 hidden md:inline">Cart</span>
-            </Link>
-
-            {/* Mobile menu button */}
-            <button 
-              className="md:hidden text-gray-600 focus:outline-none"
-              onClick={toggleMenu}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {isMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-2">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.name}
-                href={link.path}
-                className={`block py-2 text-gray-600 ${
-                  pathname === link.path ? 'font-semibold text-teal-500' : ''
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {link.name}
               </Link>
-            ))}
+
+              {/* Mobile Menu Button */}
+              <button 
+                className="md:hidden text-gray-600 focus:outline-none"
+                onClick={toggleMenu}
+                aria-label="Menu"
+              >
+                {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </div>
           </div>
-        )}
-      </div>
-    </nav>
+
+          {/* Search Bar */}
+          {isSearchOpen && (
+            <div className="py-4 border-b border-gray-100">
+              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                <input
+                  type="text"
+                  placeholder="Search for products..."
+                  className="w-full px-4 py-2 focus:outline-none"
+                  autoFocus
+                />
+                <button className="bg-teal-500 text-white px-4 py-2">
+                  <Search size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Navigation */}
+          {isMenuOpen && (
+            <nav className="md:hidden py-4 border-b border-gray-100">
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.name}
+                  href={link.path}
+                  className={`block py-2 text-gray-600 ${
+                    pathname === link.path ? 'font-medium text-teal-500' : ''
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {link.name}
+                </Link>
+              ))}
+              {isAuthenticated ? (
+                <button onClick={handleLogout} className="block py-2 text-gray-600">
+                  Logout
+                </button>
+              ) : (
+                <>
+                  <Link 
+                    href="/login"
+                    className="block py-2 text-gray-600"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Login
+                  </Link>
+                  <Link 
+                    href="/signup"
+                    className="block py-2 text-gray-600"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Signup
+                  </Link>
+                </>
+              )}
+            </nav>
+          )}
+        </div>
+      </header>
+
+      {/* Spacer for fixed header */}
+      <div className="h-24"></div>
+    </>
   );
 };
 
